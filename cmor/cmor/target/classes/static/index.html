@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>CMOR — Calculadora de Materiais</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f4f0; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
+  .container { max-width: 780px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .subtitle { font-size: 0.85rem; color: #666; margin-bottom: 1.75rem; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+  .tab { padding: 9px 22px; border: 1.5px solid #ccc; border-radius: 8px; background: white; cursor: pointer; font-size: 14px; color: #555; font-family: inherit; }
+  .tab.active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .card { background: white; border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+  .section-title { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; color: #666; }
+  .field input[type="number"], .field input[type="text"] {
+    padding: 8px 10px; border: 1px solid #ddd; border-radius: 7px;
+    font-size: 14px; font-family: inherit; background: #fafafa; color: #1a1a1a;
+  }
+  .field input:focus { outline: none; border-color: #999; background: white; }
+  .wall-card { background: #fafafa; border: 1px solid #e8e8e8; border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .wall-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .wall-label { font-size: 14px; font-weight: 600; color: #333; }
+  .remove-btn { background: none; border: none; cursor: pointer; color: #aaa; font-size: 20px; line-height: 1; padding: 0 2px; }
+  .remove-btn:hover { color: #e53e3e; }
+  .toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .toggle-row label { font-size: 13px; color: #555; cursor: pointer; }
+  .toggle-row input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; }
+  .sub-fields { padding: 10px 0 4px 4px; display: none; }
+  .add-btn {
+    width: 100%; padding: 10px; border: 1.5px dashed #ccc; border-radius: 8px;
+    background: transparent; color: #888; font-size: 13px; cursor: pointer;
+    font-family: inherit; margin-bottom: 1rem;
+  }
+  .add-btn:hover { border-color: #999; color: #444; background: #f8f8f8; }
+  .calc-btn {
+    width: 100%; padding: 13px; border: none; border-radius: 8px;
+    background: #1a1a1a; color: white; font-size: 15px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .calc-btn:hover { background: #333; }
+  .calc-btn:active { transform: scale(0.99); }
+  .result-box { margin-top: 1.25rem; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; }
+  .result-header { padding: 14px 18px; background: #f0f7f0; border-bottom: 1px solid #d0e8d0; }
+  .result-total { font-size: 24px; font-weight: 700; color: #1a5c1a; }
+  .result-sub { font-size: 12px; color: #4a7a4a; margin-top: 3px; }
+  .result-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .result-table th { text-align: left; padding: 9px 18px; font-weight: 600; font-size: 11px; color: #888; background: #fafafa; border-bottom: 1px solid #eee; }
+  .result-table td { padding: 9px 18px; border-bottom: 1px solid #f0f0f0; }
+  .result-table tr:last-child td { border-bottom: none; }
+  .result-table td:last-child { font-weight: 600; color: #1a1a1a; }
+  .error-box { margin-top: 1rem; padding: 12px 16px; background: #fff5f5; border: 1px solid #fed7d7; border-radius: 8px; color: #c53030; font-size: 13px; line-height: 1.6; }
+  .loading { margin-top: 1rem; color: #888; font-size: 13px; }
+  .cors-info { background: #fffbeb; border: 1px solid #f6e05e; border-radius: 8px; padding: 12px 16px; margin-bottom: 1rem; font-size: 13px; color: #744210; line-height: 1.7; }
+  .cors-info b { color: #5a3000; }
+  .status { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 1rem; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #ccc; }
+  .dot.ok { background: #48bb78; }
+  .dot.err { background: #fc8181; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>CMOR</h1>
+  <p class="subtitle">Calculadora de materiais para obra residencial .</p>
+
+  <div class="cors-info">
+    <b>Antes de usar:</b> certifique-se que o projeto está rodando no IntelliJ (<b>localhost:8080</b>).
+  </div>
+
+  <div class="status">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-text">Verificando servidor...</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('concreto', this)">Concreto</button>
+    <button class="tab" onclick="switchTab('tijolos', this)">Tijolos</button>
+  </div>
+
+  <!-- CONCRETO -->
+  <div id="panel-concreto" class="panel active">
+    <div class="card">
+      <div class="section-title">Dados da viga baldrame</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Altura da viga baldrame (m)</label>
+          <input type="number" id="c-alturaViga" step="0.01" value="0.4" placeholder="ex: 0.4">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Paredes (arestas)</div>
+      <div id="c-walls"></div>
+      <button class="add-btn" onclick="addWall('c')">+ adicionar parede</button>
+    </div>
+
+    <button class="calc-btn" onclick="calcular('concreto')">Calcular volume de concreto</button>
+    <div id="c-result"></div>
+  </div>
+
+  <!-- TIJOLOS -->
+  <div id="panel-tijolos" class="panel">
+    <div class="card">
+      <div class="section-title">Dimensões do tijolo</div>
+      <div class="field-row-3">
+        <div class="field"><label>Comprimento (m)</label><input type="number" id="t-compTijolo" step="0.001" value="0.19"></div>
+        <div class="field"><label>Altura (m)</label><input type="number" id="t-altTijolo" step="0.001" value="0.057"></div>
+        <div class="field"><label>Largura (m)</label><input type="number" id="t-largTijolo" step="0.001" value="0.09"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Perda / quebra (%)</label><input type="number" id="t-perda" step="1" value="10"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Paredes (arestas)</div>
+      <div id="t-walls"></div>
+      <button class="add-btn" onclick="addWall('t')">+ adicionar parede</button>
+    </div>
+
+    <button class="calc-btn" onclick="calcular('tijolos')">Calcular quantidade de tijolos</button>
+    <div id="t-result"></div>
+  </div>
+</div>
+
+<script>
+let cCount = 0, tCount = 0;
+
+async function checkServer() {
+  try {
+    await fetch('http://localhost:8080/h2-console', { mode: 'no-cors' });
+    document.getElementById('status-dot').className = 'dot ok';
+    document.getElementById('status-text').textContent = 'Servidor rodando em localhost:8080';
+  } catch(e) {
+    document.getElementById('status-dot').className = 'dot err';
+    document.getElementById('status-text').textContent = 'Servidor offline — inicie o projeto no IntelliJ';
+  }
+}
+checkServer();
+setInterval(checkServer, 5000);
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  btn.classList.add('active');
+}
+
+function addWall(prefix) {
+  const count = prefix === 'c' ? ++cCount : ++tCount;
+  const container = document.getElementById(prefix + '-walls');
+  const div = document.createElement('div');
+  div.className = 'wall-card';
+  div.id = prefix + '-wall-' + count;
+  div.innerHTML = `
+    <div class="wall-header">
+      <span class="wall-label">Parede ${count}</span>
+      <button class="remove-btn" onclick="document.getElementById('${prefix}-wall-${count}').remove()">×</button>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Nome (ex: Parede1)</label><input type="text" id="${prefix}-nome-${count}" value="Parede ${count}"></div>
+      <div class="field"><label>Espessura (m)</label><input type="number" id="${prefix}-esp-${count}" step="0.01" value="0.15"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Comprimento (m)</label><input type="number" id="${prefix}-comp-${count}" step="0.01" placeholder="4.0"></div>
+      <div class="field"><label>Altura / pé-direito (m)</label><input type="number" id="${prefix}-alt-${count}" step="0.01" value="2.8"></div>
+    </div>
+    <div class="toggle-row">
+      <input type="checkbox" id="${prefix}-janela-${count}" onchange="toggleSub('${prefix}-jf-${count}',this.checked)">
+      <label for="${prefix}-janela-${count}">Tem janela</label>
+    </div>
+    <div class="sub-fields" id="${prefix}-jf-${count}">
+      <div class="field-row">
+        <div class="field"><label>Altura da janela (m)</label><input type="number" id="${prefix}-jalt-${count}" step="0.01" placeholder="1.2"></div>
+        <div class="field"><label>Comprimento da janela (m)</label><input type="number" id="${prefix}-jcomp-${count}" step="0.01" placeholder="1.5"></div>
+      </div>
+    </div>
+    <div class="toggle-row">
+      <input type="checkbox" id="${prefix}-porta-${count}" onchange="toggleSub('${prefix}-pf-${count}',this.checked)">
+      <label for="${prefix}-porta-${count}">Tem porta</label>
+    </div>
+    <div class="sub-fields" id="${prefix}-pf-${count}">
+      <div class="field-row">
+        <div class="field"><label>Altura da porta (m)</label><input type="number" id="${prefix}-palt-${count}" step="0.01" placeholder="2.1"></div>
+        <div class="field"><label>Comprimento da porta (m)</label><input type="number" id="${prefix}-pcomp-${count}" step="0.01" placeholder="0.9"></div>
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+function toggleSub(id, show) {
+  document.getElementById(id).style.display = show ? 'block' : 'none';
+}
+
+function getVal(id) { const e = document.getElementById(id); return e ? parseFloat(e.value) || 0 : 0; }
+function getStr(id) { const e = document.getElementById(id); return e ? e.value : ''; }
+function isChecked(id) { const e = document.getElementById(id); return e ? e.checked : false; }
+
+function collectWalls(prefix) {
+  return Array.from(document.querySelectorAll('[id^="' + prefix + '-wall-"]')).map(w => {
+    const n = w.id.split('-').pop();
+    return {
+      nome: getStr(prefix+'-nome-'+n) || 'parede'+n,
+      espessura: getVal(prefix+'-esp-'+n),
+      comprimento: getVal(prefix+'-comp-'+n),
+      altura: getVal(prefix+'-alt-'+n),
+      temJanela: isChecked(prefix+'-janela-'+n),
+      alturaJanela: isChecked(prefix+'-janela-'+n) ? getVal(prefix+'-jalt-'+n) : null,
+      comprimentoJanela: isChecked(prefix+'-janela-'+n) ? getVal(prefix+'-jcomp-'+n) : null,
+      temPorta: isChecked(prefix+'-porta-'+n),
+      alturaPorta: isChecked(prefix+'-porta-'+n) ? getVal(prefix+'-palt-'+n) : null,
+      comprimentoPorta: isChecked(prefix+'-porta-'+n) ? getVal(prefix+'-pcomp-'+n) : null,
+    };
+  });
+}
+
+async function calcular(tipo) {
+  const resultDiv = document.getElementById(tipo === 'concreto' ? 'c-result' : 't-result');
+  resultDiv.innerHTML = '<p class="loading">Calculando...</p>';
+  let url, body;
+
+  if (tipo === 'concreto') {
+    const arestas = collectWalls('c');
+    if (!arestas.length) { resultDiv.innerHTML = '<div class="error-box">Adicione ao menos uma parede.</div>'; return; }
+    url = 'http://localhost:8080/api/fundacao/concreto';
+    body = { alturaViga: getVal('c-alturaViga'), arestas };
+  } else {
+    const arestas = collectWalls('t');
+    if (!arestas.length) { resultDiv.innerHTML = '<div class="error-box">Adicione ao menos uma parede.</div>'; return; }
+    url = 'http://localhost:8080/api/paredes/tijolos';
+    body = {
+      comprimentoTijolo: getVal('t-compTijolo'),
+      alturaTijolo: getVal('t-altTijolo'),
+      larguraTijolo: getVal('t-largTijolo'),
+      percentualPerda: getVal('t-perda') / 100,
+      arestas
+    };
+  }
+
+  try {
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!resp.ok) {
+      const err = await resp.text();
+      resultDiv.innerHTML = '<div class="error-box">Erro do servidor (' + resp.status + '): ' + err + '</div>';
+      return;
+    }
+    renderResult(resultDiv, tipo, await resp.json());
+  } catch(e) {
+    resultDiv.innerHTML = `<div class="error-box">
+      <b>Não foi possível conectar ao servidor.</b><br><br>
+      Possíveis causas:<br>
+      1. O projeto não está rodando no IntelliJ — clique em Run.<br>
+    </div>`;
+  }
+}
+
+function renderResult(div, tipo, data) {
+  if (tipo === 'concreto') {
+    let rows = (data.detalhesPorAresta || []).map(d =>
+      `<tr><td>${d.aresta}</td><td>${d.espessura_m} m</td><td>${d.comprimento_m} m</td><td>${d.alturaViga_m} m</td><td>${d.volume_m3} m³</td></tr>`
+    ).join('');
+    div.innerHTML = `<div class="result-box">
+      <div class="result-header">
+        <div class="result-total">${data.volumeTotalM3} m³</div>
+        <div class="result-sub">volume total de concreto · viga baldrame com ${data.alturaViga}m de altura</div>
+      </div>
+      <table class="result-table">
+        <thead><tr><th>Parede</th><th>Espessura</th><th>Comprimento</th><th>Alt. viga</th><th>Volume</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  } else {
+    let rows = (data.detalhesPorAresta || []).map(d =>
+      `<tr><td>${d.aresta}</td><td>${d.areaBruta_m2} m²</td><td>${d.areaAberturas_m2} m²</td><td>${d.areaLiquida_m2} m²</td><td>${d.tijolosSemPerda}</td></tr>`
+    ).join('');
+    div.innerHTML = `<div class="result-box">
+      <div class="result-header">
+        <div class="result-total">${data.quantidadeTotalTijolos} tijolos</div>
+        <div class="result-sub">${data.quantidadeSemPerda} sem perda + ${data.percentualPerda}% de quebra</div>
+      </div>
+      <table class="result-table">
+        <thead><tr><th>Parede</th><th>Área bruta</th><th>Aberturas</th><th>Área líquida</th><th>Tijolos</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  }
+}
+
+addWall('c');
+addWall('t');
+</script>
+</body>
+</html>

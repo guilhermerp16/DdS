@@ -1,0 +1,37 @@
+{
+  "alturaViga": 0.4,
+  "arestas": [
+    {
+      "nome": "a12",
+      "espessura": 0.15,
+      "comprimento": 4.0,
+      "altura": 2.8,
+      "temJanela": false,
+      "temPorta": false
+    },
+    {
+      "nome": "a23",
+      "espessura": 0.15,
+      "comprimento": 3.5,
+      "altura": 2.8,
+      "temJanela": false,
+      "temPorta": false
+    },
+    {
+      "nome": "a34",
+      "espessura": 0.15,
+      "comprimento": 4.0,
+      "altura": 2.8,
+      "temJanela": false,
+      "temPorta": false
+    },
+    {
+      "nome": "a14",
+      "espessura": 0.15,
+      "comprimento": 3.5,
+      "altura": 2.8,
+      "temJanela": false,
+      "temPorta": false
+    }
+  ]
+}

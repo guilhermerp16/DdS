@@ -1,0 +1,44 @@
+{
+  "alturaTijolo": 0.057,
+  "larguraTijolo": 0.09,
+  "comprimentoTijolo": 0.19,
+  "percentualPerda": 0.10,
+  "arestas": [
+    {
+      "nome": "a12",
+      "espessura": 0.15,
+      "comprimento": 4.0,
+      "altura": 2.8,
+      "temJanela": true,
+      "alturaJanela": 1.2,
+      "comprimentoJanela": 1.5,
+      "temPorta": false
+    },
+    {
+      "nome": "a23",
+      "espessura": 0.15,
+      "comprimento": 3.5,
+      "altura": 2.8,
+      "temJanela": false,
+      "temPorta": true,
+      "alturaPorta": 2.1,
+      "comprimentoPorta": 0.9
+    },
+    {
+      "nome": "a34",
+      "espessura": 0.15,
+      "comprimento": 4.0,
+      "altura": 2.8,
+      "temJanela": false,
+      "temPorta": false
+    },
+    {
+      "nome": "a14",
+      "espessura": 0.15,
+      "comprimento": 3.5,
+      "altura": 2.8,
+      "temJanela": false,
+      "temPorta": false
+    }
+  ]
+}
