@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets">
+
+<!--
+    tijolos.xhtml — Aba de cálculo de quantidade de tijolos.
+    Mesma estrutura do concreto.xhtml, com campos adicionais
+    para as dimensões do tijolo e percentual de perda.
+    Bean: #{tijolosBean} → TijolosBean.java
+-->
+
+<h:head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>CMOR — Tijolos</title>
+    <h:outputStylesheet library="css" name="style.css"/>
+</h:head>
+
+<h:body>
+    <div class="container">
+        <h1>CMOR</h1>
+        <p class="subtitle">Calculadora de materiais para obra residencial.</p>
+
+        <div class="tabs">
+            <h:link value="Concreto"   outcome="concreto"   styleClass="tab"/>
+            <h:link value="Tijolos"    outcome="tijolos"    styleClass="tab active"/>
+            <h:link value="Orçamentos" outcome="orcamentos" styleClass="tab"/>
+        </div>
+
+        <h:form id="formTijolos">
+
+            <!-- Card: Dimensões do tijolo -->
+            <div class="card">
+                <div class="section-title">Dimensões do tijolo</div>
+                <div class="field-row-3">
+                    <div class="field">
+                        <h:outputLabel for="compTijolo" value="Comprimento (m)"/>
+                        <h:inputText id="compTijolo"
+                                     value="#{tijolosBean.comprimentoTijolo}"
+                                     style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                            <f:convertNumber minFractionDigits="3" maxFractionDigits="4"/>
+                        </h:inputText>
+                    </div>
+                    <div class="field">
+                        <h:outputLabel for="altTijolo" value="Altura (m)"/>
+                        <h:inputText id="altTijolo"
+                                     value="#{tijolosBean.alturaTijolo}"
+                                     style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                            <f:convertNumber minFractionDigits="3" maxFractionDigits="4"/>
+                        </h:inputText>
+                    </div>
+                    <div class="field">
+                        <h:outputLabel for="largTijolo" value="Largura (m)"/>
+                        <h:inputText id="largTijolo"
+                                     value="#{tijolosBean.larguraTijolo}"
+                                     style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                            <f:convertNumber minFractionDigits="3" maxFractionDigits="4"/>
+                        </h:inputText>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field">
+                        <h:outputLabel for="perda" value="Perda / quebra (%)"/>
+                        <h:inputText id="perda"
+                                     value="#{tijolosBean.percentualPerda}"
+                                     style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                            <f:convertNumber minFractionDigits="0" maxFractionDigits="1"/>
+                        </h:inputText>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card: Lista de paredes -->
+            <div class="card">
+                <div class="section-title">Paredes (arestas)</div>
+
+                <c:forEach items="#{tijolosBean.paredes}" var="parede" varStatus="status">
+                    <div class="wall-card">
+                        <div class="wall-header">
+                            <span class="wall-label">Parede #{status.index + 1}</span>
+                            <h:commandButton value="×"
+                                             styleClass="remove-btn"
+                                             actionListener="#{tijolosBean.removerParede(status.index)}">
+                                <f:ajax render="formTijolos" execute="@form"/>
+                            </h:commandButton>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field">
+                                <h:outputLabel value="Nome"/>
+                                <h:inputText value="#{parede.nome}"
+                                             style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;"/>
+                            </div>
+                            <div class="field">
+                                <h:outputLabel value="Espessura (m)"/>
+                                <h:inputText value="#{parede.espessura}"
+                                             style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                    <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                </h:inputText>
+                            </div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field">
+                                <h:outputLabel value="Comprimento (m)"/>
+                                <h:inputText value="#{parede.comprimento}"
+                                             style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                    <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                </h:inputText>
+                            </div>
+                            <div class="field">
+                                <h:outputLabel value="Altura / pé-direito (m)"/>
+                                <h:inputText value="#{parede.altura}"
+                                             style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                    <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                </h:inputText>
+                            </div>
+                        </div>
+
+                        <!-- Janela -->
+                        <div class="toggle-row">
+                            <h:selectBooleanCheckbox id="temJanelaTj_#{status.index}"
+                                                     value="#{parede.temJanela}">
+                                <f:ajax render="janelaFieldsTj_#{status.index}" execute="@this"/>
+                            </h:selectBooleanCheckbox>
+                            <h:outputLabel for="temJanelaTj_#{status.index}" value="Tem janela"/>
+                        </div>
+
+                        <h:panelGroup id="janelaFieldsTj_#{status.index}">
+                            <c:if test="#{parede.temJanela}">
+                                <div class="sub-fields">
+                                    <div class="field-row">
+                                        <div class="field">
+                                            <h:outputLabel value="Altura da janela (m)"/>
+                                            <h:inputText value="#{parede.alturaJanela}"
+                                                         style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                                <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                            </h:inputText>
+                                        </div>
+                                        <div class="field">
+                                            <h:outputLabel value="Comprimento da janela (m)"/>
+                                            <h:inputText value="#{parede.comprimentoJanela}"
+                                                         style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                                <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                            </h:inputText>
+                                        </div>
+                                    </div>
+                                </div>
+                            </c:if>
+                        </h:panelGroup>
+
+                        <!-- Porta -->
+                        <div class="toggle-row">
+                            <h:selectBooleanCheckbox id="temPortaTj_#{status.index}"
+                                                     value="#{parede.temPorta}">
+                                <f:ajax render="portaFieldsTj_#{status.index}" execute="@this"/>
+                            </h:selectBooleanCheckbox>
+                            <h:outputLabel for="temPortaTj_#{status.index}" value="Tem porta"/>
+                        </div>
+
+                        <h:panelGroup id="portaFieldsTj_#{status.index}">
+                            <c:if test="#{parede.temPorta}">
+                                <div class="sub-fields">
+                                    <div class="field-row">
+                                        <div class="field">
+                                            <h:outputLabel value="Altura da porta (m)"/>
+                                            <h:inputText value="#{parede.alturaPorta}"
+                                                         style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                                <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                            </h:inputText>
+                                        </div>
+                                        <div class="field">
+                                            <h:outputLabel value="Comprimento da porta (m)"/>
+                                            <h:inputText value="#{parede.comprimentoPorta}"
+                                                         style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                                <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                            </h:inputText>
+                                        </div>
+                                    </div>
+                                </div>
+                            </c:if>
+                        </h:panelGroup>
+
+                    </div>
+                </c:forEach>
+
+                <h:panelGroup id="listParedesTijolos"/>
+
+                <h:commandButton value="+ adicionar parede"
+                                 styleClass="add-btn"
+                                 actionListener="#{tijolosBean.adicionarParede}">
+                    <f:ajax render="formTijolos" execute="@form"/>
+                </h:commandButton>
+            </div>
+
+            <h:commandButton value="Calcular quantidade de tijolos"
+                             styleClass="calc-btn"
+                             action="#{tijolosBean.calcular}">
+                <f:ajax render="resultTijolos" execute="@form"/>
+            </h:commandButton>
+
+            <h:panelGroup id="resultTijolos" layout="block">
+
+                <h:messages styleClass="error-box" showDetail="true" showSummary="false"/>
+
+                <c:if test="#{tijolosBean.resultado != null}">
+                    <div class="result-box">
+                        <div class="result-header">
+                            <div class="result-total">
+                                <h:outputText value="#{tijolosBean.resultado.quantidadeTotalTijolos}"/> tijolos
+                            </div>
+                            <div class="result-sub">
+                                <h:outputText value="#{tijolosBean.resultado.quantidadeSemPerda}"/> sem perda
+                                + <h:outputText value="#{tijolosBean.resultado.percentualPerda}"/>% de quebra
+                            </div>
+                        </div>
+
+                        <h:dataTable value="#{tijolosBean.resultado.detalhesPorAresta}"
+                                     var="detalhe"
+                                     styleClass="result-table">
+                            <h:column>
+                                <f:facet name="header">Parede</f:facet>
+                                <h:outputText value="#{detalhe['aresta']}"/>
+                            </h:column>
+                            <h:column>
+                                <f:facet name="header">Área bruta</f:facet>
+                                <h:outputText value="#{detalhe['areaBruta_m2']} m²"/>
+                            </h:column>
+                            <h:column>
+                                <f:facet name="header">Aberturas</f:facet>
+                                <h:outputText value="#{detalhe['areaAberturas_m2']} m²"/>
+                            </h:column>
+                            <h:column>
+                                <f:facet name="header">Área líquida</f:facet>
+                                <h:outputText value="#{detalhe['areaLiquida_m2']} m²"/>
+                            </h:column>
+                            <h:column>
+                                <f:facet name="header">Tijolos</f:facet>
+                                <h:outputText value="#{detalhe['tijolosSemPerda']}"/>
+                            </h:column>
+                        </h:dataTable>
+                    </div>
+
+                    <div class="hint-box">
+                        💡 <strong>Estimativa de Custo:</strong>
+                        Custo estimado deste material:
+                        <strong>
+                            R$ <h:outputText value="#{tijolosBean.custoEstimado}">
+                                <f:convertNumber minFractionDigits="2" maxFractionDigits="2"/>
+                            </h:outputText>
+                        </strong>.<br/>
+                        Acesse a aba <strong>Orçamentos</strong> para salvar este valor.
+                    </div>
+                </c:if>
+
+            </h:panelGroup>
+
+        </h:form>
+    </div>
+</h:body>
+</html>

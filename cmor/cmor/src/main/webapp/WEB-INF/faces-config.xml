@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<faces-config xmlns="https://jakarta.ee/xml/ns/jakartaee"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+              https://jakarta.ee/xml/ns/jakartaee/web-facesconfig_4_0.xsd"
+              version="4.0">
+
+    <!--
+        Configuração da internacionalização (i18n).
+        Idioma padrão: português brasileiro.
+    -->
+    <application>
+        <locale-config>
+            <default-locale>pt_BR</default-locale>
+        </locale-config>
+    </application>
+
+    <!--
+        Navegação entre páginas.
+        O JSF usará os outcomes retornados pelos Managed Beans
+        para navegar entre as páginas .xhtml.
+    -->
+    <navigation-rule>
+        <from-view-id>/index.xhtml</from-view-id>
+        <navigation-case>
+            <from-outcome>concreto</from-outcome>
+            <to-view-id>/concreto.xhtml</to-view-id>
+        </navigation-case>
+        <navigation-case>
+            <from-outcome>tijolos</from-outcome>
+            <to-view-id>/tijolos.xhtml</to-view-id>
+        </navigation-case>
+        <navigation-case>
+            <from-outcome>orcamentos</from-outcome>
+            <to-view-id>/orcamentos.xhtml</to-view-id>
+        </navigation-case>
+    </navigation-rule>
+
+</faces-config>

@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets">
+
+<!--
+    orcamentos.xhtml — Aba de gerenciamento de orçamentos.
+    Permite salvar, buscar, editar e excluir orçamentos no banco.
+    Bean: #{orcamentosBean} → OrcamentosBean.java
+-->
+
+<h:head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>CMOR — Orçamentos</title>
+    <h:outputStylesheet library="css" name="style.css"/>
+</h:head>
+
+<h:body>
+    <div class="container">
+        <h1>CMOR</h1>
+        <p class="subtitle">Calculadora de materiais para obra residencial.</p>
+
+        <div class="tabs">
+            <h:link value="Concreto"   outcome="concreto"   styleClass="tab"/>
+            <h:link value="Tijolos"    outcome="tijolos"    styleClass="tab"/>
+            <h:link value="Orçamentos" outcome="orcamentos" styleClass="tab active"/>
+        </div>
+
+        <h:form id="formOrcamentos">
+
+            <!-- Card: Salvar / Editar Orçamento -->
+            <div class="card">
+                <div class="section-title">
+                    <!--
+                        Exibe título dinâmico dependendo do modo edição.
+                        #{orcamentosBean.modoEdicao} é um boolean no Bean.
+                    -->
+                    <h:outputText value="✏️ Editando Orçamento Nº #{orcamentosBean.idEdicao}"
+                                  rendered="#{orcamentosBean.modoEdicao}"/>
+                    <h:outputText value="Salvar Orçamento Calculado"
+                                  rendered="#{!orcamentosBean.modoEdicao}"/>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <h:outputLabel for="nomeUsuario" value="Nome do Usuário / Cliente"/>
+                        <h:inputText id="nomeUsuario"
+                                     value="#{orcamentosBean.nomeUsuario}"
+                                     placeholder="Ex: João da Silva"
+                                     style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;"/>
+                    </div>
+                    <div class="field">
+                        <h:outputLabel for="custoTotal" value="Custo Total Estimado (R$)"/>
+                        <h:inputText id="custoTotal"
+                                     value="#{orcamentosBean.custoTotal}"
+                                     placeholder="Realize um cálculo ou digite aqui"
+                                     style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                            <f:convertNumber minFractionDigits="2" maxFractionDigits="2"/>
+                        </h:inputText>
+                        <h:outputText
+                            value="💡 Pré-preenchido com o último cálculo de #{orcamentoSessaoBean.origemUltimoCusto}"
+                            rendered="#{orcamentoSessaoBean.ultimoCusto != null and !orcamentosBean.modoEdicao}"
+                            style="font-size:11px;color:#888;margin-top:4px;display:block;"/>
+                    </div>
+                </div>
+
+                <!--
+                    Botão salvar: chama salvar() no Bean.
+                    O estilo muda via EL dependendo do modo edição.
+                -->
+                <h:commandButton id="btnSalvar"
+                                 value="#{orcamentosBean.modoEdicao ? 'Atualizar Registro' : 'Salvar Orçamento no Banco'}"
+                                 styleClass="calc-btn #{orcamentosBean.modoEdicao ? 'save-yellow' : 'save-green'}"
+                                 action="#{orcamentosBean.salvar}">
+                    <f:ajax render="formOrcamentos" execute="@form"/>
+                </h:commandButton>
+
+                <!-- Botão cancelar edição — só aparece no modo edição -->
+                <h:commandButton value="Cancelar Edição"
+                                 styleClass="calc-btn"
+                                 style="background:#e2e8f0;color:#4a5568;margin-top:8px;"
+                                 rendered="#{orcamentosBean.modoEdicao}"
+                                 action="#{orcamentosBean.cancelarEdicao}">
+                    <f:ajax render="formOrcamentos" execute="@none"/>
+                </h:commandButton>
+
+                <!-- Mensagem de feedback após salvar/atualizar -->
+                <h:panelGroup id="saveResult" layout="block">
+                    <c:if test="#{orcamentosBean.mensagemSucesso != null}">
+                        <div class="success-box">
+                            <h:outputText value="#{orcamentosBean.mensagemSucesso}" escape="false"/>
+                        </div>
+                    </c:if>
+                    <c:if test="#{orcamentosBean.mensagemErro != null}">
+                        <div class="error-box">
+                            <h:outputText value="#{orcamentosBean.mensagemErro}"/>
+                        </div>
+                    </c:if>
+                </h:panelGroup>
+
+            </div>
+
+            <!-- Card: Consultar Orçamentos -->
+            <div class="card">
+                <div class="section-title">Consultar Orçamentos Existentes</div>
+
+                <div class="field-row" style="grid-template-columns: 2fr 1fr; align-items: end;">
+                    <div class="field">
+                        <h:outputLabel for="buscaTermo"
+                                       value="Buscar por Número do Orçamento (ID) ou Nome do Usuário"/>
+                        <h:inputText id="buscaTermo"
+                                     value="#{orcamentosBean.termoBusca}"
+                                     placeholder="Digite o ID ou o nome..."
+                                     style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;"/>
+                    </div>
+                    <h:commandButton value="Pesquisar"
+                                     styleClass="calc-btn"
+                                     action="#{orcamentosBean.buscar}">
+                        <f:ajax render="resultBusca" execute="@form"/>
+                    </h:commandButton>
+                </div>
+
+                <!-- Tabela de resultados da busca -->
+                <h:panelGroup id="resultBusca" layout="block" style="margin-top:15px;">
+
+                    <h:messages styleClass="error-box" showDetail="true" showSummary="false"/>
+
+                    <c:if test="#{not empty orcamentosBean.resultadoBusca}">
+                        <div class="result-box">
+                            <!--
+                                h:dataTable renderiza a lista de Orcamento retornada pelo Bean.
+                                var="orc" é a variável de iteração de cada linha.
+                            -->
+                            <h:dataTable value="#{orcamentosBean.resultadoBusca}"
+                                         var="orc"
+                                         styleClass="result-table">
+                                <h:column>
+                                    <f:facet name="header">ID</f:facet>
+                                    <strong>#<h:outputText value="#{orc.id}"/></strong>
+                                </h:column>
+                                <h:column>
+                                    <f:facet name="header">Cliente</f:facet>
+                                    <h:outputText value="#{orc.nomeUsuario}"/>
+                                </h:column>
+                                <h:column>
+                                    <f:facet name="header">Valor Estimado</f:facet>
+                                    <strong>
+                                        R$ <h:outputText value="#{orc.custoTotalEstimado}">
+                                            <f:convertNumber minFractionDigits="2" maxFractionDigits="2"/>
+                                        </h:outputText>
+                                    </strong>
+                                </h:column>
+                                <h:column>
+                                    <f:facet name="header">Ações</f:facet>
+                                    <!--
+                                        Botão editar: passa o objeto orc para o método
+                                        prepararEdicao(Orcamento) no Bean.
+                                    -->
+                                    <h:commandButton value="Editar"
+                                                     styleClass="action-btn edit-btn"
+                                                     actionListener="#{orcamentosBean.prepararEdicao(orc)}">
+                                        <f:ajax render="formOrcamentos" execute="@this"/>
+                                    </h:commandButton>
+                                    <!--
+                                        Botão excluir: passa o id para deletar(Long) no Bean.
+                                    -->
+                                    <h:commandButton value="Excluir"
+                                                     styleClass="action-btn delete-btn"
+                                                     actionListener="#{orcamentosBean.deletar(orc.id)}">
+                                        <f:ajax render="formOrcamentos" execute="@form"/>
+                                    </h:commandButton>
+                                </h:column>
+                            </h:dataTable>
+                        </div>
+                    </c:if>
+
+                    <c:if test="#{empty orcamentosBean.resultadoBusca and orcamentosBean.buscaRealizada}">
+                        <p style="color:#888;font-size:13px;margin-top:8px;">
+                            Nenhum orçamento encontrado.
+                        </p>
+                    </c:if>
+
+                </h:panelGroup>
+            </div>
+
+        </h:form>
+    </div>
+</h:body>
+</html>

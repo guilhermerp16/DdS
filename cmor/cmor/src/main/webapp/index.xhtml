@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core">
+
+<!--
+    index.xhtml — Página de entrada do CMOR.
+    Redireciona automaticamente para concreto.xhtml via f:viewAction.
+
+    Obs.: as páginas de conteúdo (concreto, tijolos, orcamentos) são
+    standalone — cada uma tem seu próprio <h:head> e <h:body>.
+    Não usamos Facelets template aqui para manter a estrutura simples.
+-->
+
+<h:head>
+    <meta charset="UTF-8"/>
+    <title>CMOR — Redirecionando...</title>
+    <!-- Redirect via meta como fallback caso o f:viewAction não funcione -->
+    <meta http-equiv="refresh" content="0;url=concreto.xhtml"/>
+</h:head>
+
+<h:body>
+    <!--
+        f:metadata + f:viewAction: forma idiomática JSF de executar lógica
+        antes de renderizar a view. O action="concreto" dispara a regra de
+        navegação definida em faces-config.xml e redireciona para concreto.xhtml.
+    -->
+    <f:metadata>
+        <f:viewAction action="concreto" immediate="true"/>
+    </f:metadata>
+    <p>Redirecionando para a calculadora...</p>
+</h:body>
+</html>

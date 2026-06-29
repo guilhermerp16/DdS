@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:c="jakarta.tags.core"
+      xmlns:ui="jakarta.faces.facelets">
+
+<!--
+    concreto.xhtml — Aba de cálculo de volume de concreto (viga baldrame).
+
+    Conceitos JSF usados:
+    - h:form          → formulário JSF (substitui <form> HTML)
+    - h:inputText / h:inputText  → campos de entrada vinculados ao Bean via EL
+    - h:commandButton → botão que chama métodos do Managed Bean no servidor
+    - h:dataTable     → tabela dinâmica gerada a partir de uma lista Java
+    - c:forEach       → iteração sobre a lista de paredes
+    - f:ajax          → atualiza partes da página sem reload completo
+    - #{concretoBean} → referência ao Managed Bean ConcretoBean.java
+-->
+
+<h:head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>CMOR — Concreto</title>
+    <h:outputStylesheet library="css" name="style.css"/>
+</h:head>
+
+<h:body>
+    <div class="container">
+        <h1>CMOR</h1>
+        <p class="subtitle">Calculadora de materiais para obra residencial.</p>
+
+        <!-- Navegação por abas -->
+        <div class="tabs">
+            <h:link value="Concreto"   outcome="concreto"   styleClass="tab active"/>
+            <h:link value="Tijolos"    outcome="tijolos"    styleClass="tab"/>
+            <h:link value="Orçamentos" outcome="orcamentos" styleClass="tab"/>
+        </div>
+
+        <!--
+            h:form é obrigatório para que h:commandButton e h:inputText
+            funcionem corretamente com o ciclo de vida do JSF.
+        -->
+        <h:form id="formConcreto">
+
+            <!-- Card: Altura da viga baldrame -->
+            <div class="card">
+                <div class="section-title">Dados da viga baldrame</div>
+                <div class="field-row">
+                    <div class="field">
+                        <h:outputLabel for="alturaViga" value="Altura da viga baldrame (m)"/>
+                        <!--
+                            h:inputText vincula o campo ao atributo alturaViga do Bean.
+                            #{concretoBean.alturaViga} usa EL (Expression Language) para
+                            ler/escrever diretamente na propriedade Java.
+                        -->
+                        <h:inputText id="alturaViga"
+                                     value="#{concretoBean.alturaViga}"
+                                     styleClass="field input"
+                                     style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                            <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                        </h:inputText>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card: Lista de paredes -->
+            <div class="card">
+                <div class="section-title">Paredes (arestas)</div>
+
+                <!--
+                    c:forEach itera sobre a lista de paredes (List<ParedeForm>)
+                    mantida pelo Bean. varStatus fornece o índice (varStatus.index).
+                -->
+                <c:forEach items="#{concretoBean.paredes}" var="parede" varStatus="status">
+                    <div class="wall-card">
+                        <div class="wall-header">
+                            <span class="wall-label">Parede #{status.index + 1}</span>
+                            <!--
+                                h:commandButton com f:ajax atualiza apenas o
+                                componente "listParedes" sem recarregar a página.
+                                actionListener chama o método removerParede(index) no Bean.
+                            -->
+                            <h:commandButton value="×"
+                                             styleClass="remove-btn"
+                                             actionListener="#{concretoBean.removerParede(status.index)}">
+                                <f:ajax render="formConcreto" execute="@form"/>
+                            </h:commandButton>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field">
+                                <h:outputLabel value="Nome"/>
+                                <h:inputText value="#{parede.nome}"
+                                             style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;"/>
+                            </div>
+                            <div class="field">
+                                <h:outputLabel value="Espessura (m)"/>
+                                <h:inputText value="#{parede.espessura}"
+                                             style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                    <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                </h:inputText>
+                            </div>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field">
+                                <h:outputLabel value="Comprimento (m)"/>
+                                <h:inputText value="#{parede.comprimento}"
+                                             style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                    <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                </h:inputText>
+                            </div>
+                            <div class="field">
+                                <h:outputLabel value="Altura / pé-direito (m)"/>
+                                <h:inputText value="#{parede.altura}"
+                                             style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                    <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                </h:inputText>
+                            </div>
+                        </div>
+
+                        <!-- Janela -->
+                        <div class="toggle-row">
+                            <h:selectBooleanCheckbox id="temJanela_#{status.index}"
+                                                     value="#{parede.temJanela}">
+                                <!--
+                                    f:ajax: ao marcar/desmarcar a checkbox,
+                                    re-renderiza o painel de campos da janela
+                                    (janelaFields_N) sem reload.
+                                -->
+                                <f:ajax render="janelaFields_#{status.index}" execute="@this"/>
+                            </h:selectBooleanCheckbox>
+                            <h:outputLabel for="temJanela_#{status.index}" value="Tem janela"/>
+                        </div>
+
+                        <h:panelGroup id="janelaFields_#{status.index}">
+                            <c:if test="#{parede.temJanela}">
+                                <div class="sub-fields">
+                                    <div class="field-row">
+                                        <div class="field">
+                                            <h:outputLabel value="Altura da janela (m)"/>
+                                            <h:inputText value="#{parede.alturaJanela}"
+                                                         style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                                <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                            </h:inputText>
+                                        </div>
+                                        <div class="field">
+                                            <h:outputLabel value="Comprimento da janela (m)"/>
+                                            <h:inputText value="#{parede.comprimentoJanela}"
+                                                         style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                                <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                            </h:inputText>
+                                        </div>
+                                    </div>
+                                </div>
+                            </c:if>
+                        </h:panelGroup>
+
+                        <!-- Porta -->
+                        <div class="toggle-row">
+                            <h:selectBooleanCheckbox id="temPorta_#{status.index}"
+                                                     value="#{parede.temPorta}">
+                                <f:ajax render="portaFields_#{status.index}" execute="@this"/>
+                            </h:selectBooleanCheckbox>
+                            <h:outputLabel for="temPorta_#{status.index}" value="Tem porta"/>
+                        </div>
+
+                        <h:panelGroup id="portaFields_#{status.index}">
+                            <c:if test="#{parede.temPorta}">
+                                <div class="sub-fields">
+                                    <div class="field-row">
+                                        <div class="field">
+                                            <h:outputLabel value="Altura da porta (m)"/>
+                                            <h:inputText value="#{parede.alturaPorta}"
+                                                         style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                                <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                            </h:inputText>
+                                        </div>
+                                        <div class="field">
+                                            <h:outputLabel value="Comprimento da porta (m)"/>
+                                            <h:inputText value="#{parede.comprimentoPorta}"
+                                                         style="padding:8px 10px;border:1px solid #ddd;border-radius:7px;font-size:14px;background:#fafafa;">
+                                                <f:convertNumber minFractionDigits="2" maxFractionDigits="3"/>
+                                            </h:inputText>
+                                        </div>
+                                    </div>
+                                </div>
+                            </c:if>
+                        </h:panelGroup>
+
+                    </div>
+                </c:forEach>
+
+                <!-- id="listParedes" permite que f:ajax atualize esta região -->
+                <h:panelGroup id="listParedes"/>
+
+                <!-- Botão para adicionar nova parede à lista no Bean -->
+                <h:commandButton value="+ adicionar parede"
+                                 styleClass="add-btn"
+                                 actionListener="#{concretoBean.adicionarParede}">
+                    <f:ajax render="formConcreto" execute="@form"/>
+                </h:commandButton>
+            </div>
+
+            <!-- Botão calcular: chama calcular() no Bean e atualiza resultConcreto -->
+            <h:commandButton value="Calcular volume de concreto"
+                             styleClass="calc-btn"
+                             action="#{concretoBean.calcular}">
+                <f:ajax render="resultConcreto" execute="@form"/>
+            </h:commandButton>
+
+            <!-- Área de resultado — atualizada via AJAX após o cálculo -->
+            <h:panelGroup id="resultConcreto" layout="block">
+
+                <!-- Exibe mensagens de validação do JSF -->
+                <h:messages styleClass="error-box" showDetail="true" showSummary="false"/>
+
+                <!-- Resultado só aparece se volumeTotalM3 estiver preenchido no Bean -->
+                <c:if test="#{concretoBean.resultado != null}">
+                    <div class="result-box">
+                        <div class="result-header">
+                            <div class="result-total">
+                                <h:outputText value="#{concretoBean.resultado.volumeTotalM3}"/> m³
+                            </div>
+                            <div class="result-sub">
+                                volume total de concreto · viga baldrame com
+                                <h:outputText value="#{concretoBean.resultado.alturaViga}"/>m de altura
+                            </div>
+                        </div>
+
+                        <!--
+                            h:dataTable gera a tabela de detalhes por parede
+                            a partir da lista detalhesPorAresta do DTO de resposta.
+                        -->
+                        <h:dataTable value="#{concretoBean.resultado.detalhesPorAresta}"
+                                     var="detalhe"
+                                     styleClass="result-table">
+                            <h:column>
+                                <f:facet name="header">Parede</f:facet>
+                                <h:outputText value="#{detalhe['aresta']}"/>
+                            </h:column>
+                            <h:column>
+                                <f:facet name="header">Espessura</f:facet>
+                                <h:outputText value="#{detalhe['espessura_m']} m"/>
+                            </h:column>
+                            <h:column>
+                                <f:facet name="header">Comprimento</f:facet>
+                                <h:outputText value="#{detalhe['comprimento_m']} m"/>
+                            </h:column>
+                            <h:column>
+                                <f:facet name="header">Alt. viga</f:facet>
+                                <h:outputText value="#{detalhe['alturaViga_m']} m"/>
+                            </h:column>
+                            <h:column>
+                                <f:facet name="header">Volume</f:facet>
+                                <h:outputText value="#{detalhe['volume_m3']} m³"/>
+                            </h:column>
+                        </h:dataTable>
+                    </div>
+
+                    <div class="hint-box">
+                        💡 <strong>Estimativa de Custo:</strong>
+                        Custo estimado deste material:
+                        <strong>
+                            R$ <h:outputText value="#{concretoBean.custoEstimado}">
+                                <f:convertNumber minFractionDigits="2" maxFractionDigits="2"/>
+                            </h:outputText>
+                        </strong>.<br/>
+                        Acesse a aba <strong>Orçamentos</strong> para salvar este valor.
+                    </div>
+                </c:if>
+
+            </h:panelGroup>
+
+        </h:form>
+    </div>
+</h:body>
+</html>
