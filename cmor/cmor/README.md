@@ -2,7 +2,7 @@
 
 > Projeto acadêmico desenvolvido para a disciplina **Desenvolvimento de Sistemas** do curso de Ciência da Computação — **UniCEUB**.
 
-Backend REST desenvolvido em **Java + Spring Boot** que calcula o consumo de materiais em fases de obras residenciais a partir de parâmetros fornecidos pelo usuário e fórmulas da engenharia civil.
+Aplicação web desenvolvida em **Java + Spring Boot + Jakarta Faces** que calcula o consumo de materiais em fases de obras residenciais a partir de parâmetros fornecidos pelo usuário e fórmulas da engenharia civil.
 
 ---
 
@@ -12,17 +12,20 @@ Backend REST desenvolvido em **Java + Spring Boot** que calcula o consumo de mat
 - [Pré-requisitos](#pré-requisitos)
 - [Como executar](#como-executar)
 - [Interface web](#interface-web)
-- [Modelagem da Planta Baixa](#etapa-1--modelagem-da-planta-baixa)
-- [Volume de Concreto](#etapa-2--volume-de-concreto-na-fundação)
-- [Quantidade de Tijolos](#etapa-3--quantidade-de-tijolos)
+- [Funcionalidades](#funcionalidades)
+- [Modelagem da Planta Baixa](#modelagem-da-planta-baixa)
+- [Volume de Concreto](#volume-de-concreto-na-fundação)
+- [Quantidade de Tijolos](#quantidade-de-tijolos)
+- [Orçamentos](#orçamentos)
 - [Banco de dados H2](#banco-de-dados-h2)
+- [API REST](#api-rest)
 - [Decisões de design](#decisões-de-design)
 
 ---
 
 ## Sobre o projeto
 
-Empresas de engenharia precisam lidar constantemente com dimensionamento de materiais e fornecer orçamentos baseados em previsão de custos. O **CMOR** é um conjunto de serviços computacionais que calculam o consumo de materiais em determinadas fases de obras residenciais.
+Empresas de engenharia precisam lidar constantemente com dimensionamento de materiais e fornecer orçamentos baseados em previsão de custos. O **CMOR** é uma aplicação web completa que calcula o consumo de materiais em determinadas fases de obras residenciais e permite salvar, buscar e gerenciar orçamentos em banco de dados.
 
 A planta baixa da casa é modelada como um **grafo G=(V,A)**, onde:
 - os **vértices** representam os encontros de paredes (que receberão pilares estruturais)
@@ -36,9 +39,13 @@ A planta baixa da casa é modelada como um **grafo G=(V,A)**, onde:
 |---|---|---|
 | Java | 23 | Linguagem principal |
 | Spring Boot | 3.2.5 | Framework web e configuração |
+| Jakarta Faces (JSF) | 4.0.6 | Framework de interface web (views `.xhtml`) |
+| Mojarra | 4.0.6 | Implementação do Jakarta Faces |
+| JoinFaces | 5.3.0 | Integração JSF + Spring Boot |
+| Weld | 5.1.2 | Implementação CDI (injeção de dependências JSF) |
 | Spring Data JPA | 3.2.5 | ORM e persistência |
 | Hibernate | 6.4.4 | Implementação JPA |
-| H2 Database | 2.2.224 | Banco de dados em memória |
+| H2 Database | 2.2.224 | Banco de dados em arquivo |
 | Bean Validation | 3.0 | Validação dos dados de entrada |
 | Maven | 3.x | Gerenciamento de dependências |
 
@@ -50,13 +57,13 @@ Antes de executar o projeto, certifique-se de ter instalado:
 
 - [JDK 17+](https://adoptium.net/) (o projeto foi testado com JDK 23)
 - [IntelliJ IDEA](https://www.jetbrains.com/idea/)
-- [Postman](https://www.postman.com/downloads/) para testar os endpoints diretamente (opcional)
+- [Postman](https://www.postman.com/downloads/) para testar os endpoints REST diretamente (opcional)
 
 ---
 
 ## Como executar
 
-1. Clone ou baixe o repositório e abra a pasta no IntelliJ
+1. Clone ou baixe o repositório e abra a pasta `cmor` no IntelliJ
 2. Aguarde o Maven baixar as dependências automaticamente
 3. Localize o arquivo `CmorApplication.java` em `src/main/java/com/cmor/`
 4. Clique no botão **▶ Run** ao lado da classe `main`
@@ -67,27 +74,60 @@ Tomcat started on port 8080 (http)
 Started CmorApplication in X seconds
 ```
 
-6. Acesse `http://localhost:8080` no navegador — a interface da calculadora abrirá automaticamente
+6. Acesse `http://localhost:8080/concreto.xhtml` no navegador — a interface da calculadora abrirá automaticamente
+
 
 ---
 
 ## Interface web
 
-O projeto inclui uma interface web integrada, servida automaticamente pelo Spring Boot em `http://localhost:8080`.
+A interface é construída com **Jakarta Faces (JSF)** e servida automaticamente em `http://localhost:8080/concreto.xhtml`. Possui três abas:
 
-Ela permite inserir os dados das paredes manualmente e visualizar os resultados de ambas as etapas sem necessidade de ferramentas externas como o Postman.
+- **Concreto** — calcula o volume de concreto para vigas baldrame
+- **Tijolos** — calcula a quantidade de tijolos para assentamento de paredes
+- **Orçamentos** — salva, busca, edita e exclui orçamentos no banco de dados
 
-O arquivo fonte da interface está em:
+Os arquivos de view estão em:
 
 ```
-src/main/resources/static/index.html
+src/main/resources/META-INF/resources/
+├── concreto.xhtml
+├── tijolos.xhtml
+├── orcamentos.xhtml
+└── resources/
+    └── css/
+        └── style.css
 ```
+
+---
+
+## Funcionalidades
+
+### Calculadora de Concreto
+- Inserção de múltiplas paredes com nome, espessura, comprimento e altura
+- Suporte a janelas e portas por parede (com toggle dinâmico via AJAX)
+- Adição e remoção de paredes dinamicamente
+- Cálculo do volume total e detalhamento por parede
+- Estimativa de custo (R$ 480,00/m³)
+
+### Calculadora de Tijolos
+- Mesma estrutura de paredes do concreto
+- Campos adicionais para dimensões do tijolo e percentual de perda/quebra
+- Desconto automático das áreas de aberturas (janelas e portas)
+- Estimativa de custo (R$ 1,40/tijolo)
+
+### Orçamentos
+- Ao navegar para a aba Orçamentos, o campo de custo é **pré-preenchido automaticamente** com o último valor calculado (concreto ou tijolos)
+- Salvar novos orçamentos com nome do cliente e custo estimado
+- Buscar orçamentos por ID numérico ou nome do cliente
+- Editar e excluir registros existentes
+- Feedback visual de sucesso ou erro após cada operação
 
 ---
 
 ## Modelagem da Planta Baixa
 
-A planta baixa é representada como um grafo **G=(V,A)**, onde cada elemento é mapeado para uma entidade JPA persistida automaticamente no banco de dados:
+A planta baixa é representada como um grafo **G=(V,A)**, onde cada elemento é mapeado para uma entidade JPA:
 
 | Conceito da planta | Classe Java | Tabela no banco |
 |---|---|---|
@@ -123,58 +163,11 @@ Volume (m³) = Espessura da parede × Altura da viga × Comprimento da parede
 
 A espessura e o comprimento vêm de cada aresta; a altura da viga é informada pelo usuário.
 
-### Endpoint
-
-```
-POST /api/fundacao/concreto
-Content-Type: application/json
-```
-
-### Campos da requisição
-
-| Campo | Tipo | Obrigatório | Descrição |
-|---|---|---|---|
-| `alturaViga` | Double | ✓ | Altura da viga baldrame em metros |
-| `arestas` | List | ✓ | Lista de paredes da planta |
-| `arestas[].nome` | String | | Identificador da parede (ex: "a12") |
-| `arestas[].espessura` | Double | ✓ | Espessura da parede em metros |
-| `arestas[].comprimento` | Double | ✓ | Comprimento da parede em metros |
-| `arestas[].altura` | Double | | Altura da parede em metros |
-
-### Exemplo de requisição
-
-```json
-{
-  "alturaViga": 0.4,
-  "arestas": [
-    { "nome": "a12", "espessura": 0.15, "comprimento": 4.0, "altura": 2.8 },
-    { "nome": "a23", "espessura": 0.15, "comprimento": 3.5, "altura": 2.8 },
-    { "nome": "a34", "espessura": 0.15, "comprimento": 4.0, "altura": 2.8 },
-    { "nome": "a14", "espessura": 0.15, "comprimento": 3.5, "altura": 2.8 }
-  ]
-}
-```
-
-### Exemplo de resposta — `200 OK`
-
-```json
-{
-  "volumeTotalM3": 0.9,
-  "alturaViga": 0.4,
-  "detalhesPorAresta": [
-    { "aresta": "a12", "espessura_m": 0.15, "comprimento_m": 4.0, "alturaViga_m": 0.4, "volume_m3": 0.24 },
-    { "aresta": "a23", "espessura_m": 0.15, "comprimento_m": 3.5, "alturaViga_m": 0.4, "volume_m3": 0.21 },
-    { "aresta": "a34", "espessura_m": 0.15, "comprimento_m": 4.0, "alturaViga_m": 0.4, "volume_m3": 0.24 },
-    { "aresta": "a14", "espessura_m": 0.15, "comprimento_m": 3.5, "alturaViga_m": 0.4, "volume_m3": 0.21 }
-  ]
-}
-```
-
 ---
 
 ## Quantidade de Tijolos
 
-Calcula a quantidade de tijolos necessária para assentar as paredes, descontando automaticamente as áreas de janelas e portas e aplicando um percentual de perda por quebra.
+Calcula a quantidade de tijolos para assentar as paredes, descontando automaticamente as áreas de janelas e portas e aplicando um percentual de perda por quebra.
 
 ### Fórmula
 
@@ -187,55 +180,94 @@ Calcula a quantidade de tijolos necessária para assentar as paredes, descontand
 6. Tijolos (com perda) = ⌈ tijolos_sem_perda × (1 + percentual_perda) ⌉
 ```
 
+---
 
-### Exemplo de resposta — `200 OK`
+## Orçamentos
 
-```json
-{
-  "quantidadeTotalTijolos": 3893,
-  "quantidadeSemPerda": 3539,
-  "percentualPerda": 10.0,
-  "detalhesPorAresta": [
-    { "aresta": "a12", "areaBruta_m2": 11.2, "areaAberturas_m2": 1.80, "areaLiquida_m2": 9.40, "tijolosSemPerda": 868  },
-    { "aresta": "a23", "areaBruta_m2": 9.8,  "areaAberturas_m2": 1.89, "areaLiquida_m2": 7.91, "tijolosSemPerda": 731  },
-    { "aresta": "a34", "areaBruta_m2": 11.2, "areaAberturas_m2": 0.00, "areaLiquida_m2": 11.2, "tijolosSemPerda": 1035 },
-    { "aresta": "a14", "areaBruta_m2": 9.8,  "areaAberturas_m2": 0.00, "areaLiquida_m2": 9.80, "tijolosSemPerda": 905  }
-  ]
-}
-```
+Os orçamentos são persistidos no banco H2 em arquivo (sobrevivem ao reinício da aplicação). Cada registro guarda:
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | Long | Identificador gerado automaticamente |
+| `nomeUsuario` | String | Nome do cliente |
+| `custoTotalEstimado` | Double | Valor estimado em reais |
+
+A busca suporta dois modos: por **ID numérico** (busca exata) ou por **nome** (busca parcial, sem distinção de maiúsculas/minúsculas).
 
 ---
 
 ## Banco de dados H2
 
-O projeto usa o banco **H2 em memória** para desenvolvimento, criado automaticamente ao iniciar e destruído ao encerrar a aplicação.
+O projeto usa o banco **H2 em arquivo** para persistência entre sessões.
 
 Para inspecionar os dados em tempo real, acesse o console com o servidor rodando:
 
 ```
 URL:      http://localhost:8080/h2-console
-JDBC URL: jdbc:h2:mem:cmordb
+JDBC URL: jdbc:h2:file:./data/cmordb
 Usuário:  sa
 Senha:    (deixar em branco)
 ```
 
-Para usar um banco persistente em produção, substitua as configurações em `application.properties` pelas de PostgreSQL ou MySQL.
+---
+
+## API REST
+
+Além da interface JSF, o projeto expõe endpoints REST para integração com ferramentas externas (Postman, etc).
+
+### POST /api/fundacao/concreto
+
+```json
+{
+  "alturaViga": 0.4,
+  "arestas": [
+    { "nome": "a12", "espessura": 0.15, "comprimento": 4.0, "altura": 2.8 },
+    { "nome": "a23", "espessura": 0.15, "comprimento": 3.5, "altura": 2.8 }
+  ]
+}
+```
+
+### POST /api/parede/tijolos
+
+```json
+{
+  "comprimentoTijolo": 0.19,
+  "alturaTijolo": 0.057,
+  "larguraTijolo": 0.09,
+  "percentualPerda": 0.10,
+  "arestas": [
+    { "nome": "a12", "espessura": 0.15, "comprimento": 4.0, "altura": 2.8,
+      "temJanela": true, "alturaJanela": 1.2, "comprimentoJanela": 1.5,
+      "temPorta": false }
+  ]
+}
+```
+
+### GET/POST /api/orcamentos
+
+| Método | Rota | Descrição |
+|---|---|---|
+| `GET` | `/api/orcamentos` | Lista todos |
+| `POST` | `/api/orcamentos` | Cria novo |
+| `PUT` | `/api/orcamentos/{id}` | Atualiza |
+| `DELETE` | `/api/orcamentos/{id}` | Remove |
+| `GET` | `/api/orcamentos/busca?termo=` | Busca por ID ou nome |
 
 ---
 
 ## Decisões de design
 
-**Grafo como domínio:** as classes `Vertice`, `Aresta` e `Comodo` modelam fielmente o grafo G=(V,A) descrito no enunciado, com relacionamentos JPA entre elas. Arestas podem ser compartilhadas entre cômodos adjacentes.
+**Grafo como domínio:** as classes `Vertice`, `Aresta` e `Comodo` modelam fielmente o grafo G=(V,A) descrito no enunciado, com relacionamentos JPA entre elas.
 
-**ORM com Spring Data JPA:** toda persistência é feita via repositórios que estendem `JpaRepository`, sem SQL manual. O Hibernate gera e executa o DDL automaticamente com base nas anotações das entidades.
+**Jakarta Faces (JSF):** a migração de HTML estático para JSF eliminou a necessidade de fetch/JavaScript manual. Os Managed Beans (`@Named` + `@ViewScoped`) chamam os serviços Java diretamente, sem passar por HTTP — mais simples, mais seguro e sem código de rede duplicado.
 
-**Padrão DTO:** os endpoints recebem e devolvem DTOs — nunca as entidades JPA diretamente — para desacoplar a API do modelo interno e evitar dependências circulares na serialização JSON.
+**Escopos de bean:** beans de formulário usam `@ViewScoped` (vivem enquanto o usuário está na página). O `OrcamentoSessaoBean` usa `@SessionScoped` para transportar o último custo calculado entre abas sem perda de estado.
 
-**Validação declarativa:** as anotações `@NotNull`, `@NotEmpty` e `@Positive` nos DTOs garantem que dados inválidos retornam `400 Bad Request` com mensagem descritiva, sem código manual de validação.
+**ORM com Spring Data JPA:** toda persistência é feita via repositórios que estendem `JpaRepository`, sem SQL manual.
 
-**Interface web integrada:** o arquivo `index.html` em `src/main/resources/static/` é servido automaticamente pelo Spring Boot, dispensando servidor web separado ou ferramentas externas para uso básico da calculadora.
+**Padrão DTO:** os endpoints REST recebem e devolvem DTOs — nunca as entidades JPA diretamente — para desacoplar a API do modelo interno.
 
-**CORS configurado:** a classe `CorsConfig` libera chamadas de qualquer origem para `/api/**`, permitindo que a interface web e ferramentas como o Postman se comuniquem com o servidor sem bloqueio do navegador.
+**CORS configurado:** a classe `CorsConfig` libera chamadas de qualquer origem para `/api/**`, permitindo uso com Postman ou integração futura com outros clientes.
 
 ---
 
